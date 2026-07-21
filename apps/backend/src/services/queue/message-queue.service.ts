@@ -44,7 +44,7 @@ export class MessageQueueService {
 
     if (messages.length > 0) {
       await prisma.messageQueue.updateMany({
-        where: { id: { in: messages.map(m => m.id) } },
+        where: { id: { in: messages.map((m: any) => m.id) } },
         data: { status: 'PROCESSING', updatedAt: new Date() },
       });
     }
@@ -105,7 +105,7 @@ export class MessageQueueService {
       _count: true,
     });
     
-    return stats.reduce((acc, curr) => {
+    return stats.reduce((acc: any, curr: any) => {
       acc[curr.status.toLowerCase()] = curr._count;
       return acc;
     }, {} as Record<string, number>);

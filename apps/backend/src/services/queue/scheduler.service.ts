@@ -65,7 +65,7 @@ export class SchedulerService {
       if (items.length > 0) {
         logger.info(`Processing ${items.length} scheduled items`);
         await prisma.notificationQueue.updateMany({
-          where: { id: { in: items.map(i => i.id) } },
+          where: { id: { in: items.map((i: any) => i.id) } },
           data: { status: 'PROCESSING' },
         });
 

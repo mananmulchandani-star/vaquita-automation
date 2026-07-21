@@ -139,7 +139,7 @@ export class CustomerService {
       where: { customerId, storeId, financialStatus: 'PAID' as any },
     });
 
-    const totalSpend = orders.reduce((sum, order) => sum + Number(order.totalPrice), 0);
+    const totalSpend = orders.reduce((sum: any, order: any) => sum + Number(order.totalPrice), 0);
     const orderCount = orders.length;
     const customerLifetimeValue = totalSpend; // simplified CLV
 

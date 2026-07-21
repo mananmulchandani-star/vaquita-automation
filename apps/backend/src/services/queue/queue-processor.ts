@@ -43,7 +43,7 @@ class QueueProcessor {
       const messages = await messageQueueService.dequeue(this.batchSize);
       if (messages.length === 0) return;
 
-      const promises = messages.map(async (msg) => {
+      const promises = messages.map(async (msg: any) => {
         try {
           const client = await getWhatsAppClient(msg.storeId);
           let result: any;

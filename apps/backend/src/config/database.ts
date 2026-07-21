@@ -59,7 +59,7 @@ prisma.$on('warn', (e: any) => {
 export const extendedPrisma = prisma.$extends({
   query: {
     $allModels: {
-      async $allOperations({ model, operation, args, query }) {
+      async $allOperations({ model, operation, args, query }: any) {
         if (
           operation === 'findUnique' ||
           operation === 'findFirst' ||
