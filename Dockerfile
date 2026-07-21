@@ -18,7 +18,7 @@ COPY apps/ ./apps/
 COPY tsconfig.base.json ./
 COPY package.json ./
 # Single uncacheable build step - generates prisma, builds all workspaces, verifies all dists
-RUN npx prisma generate --schema=packages/database/prisma/schema.prisma && \
+RUN DATABASE_URL="postgresql://dummy" DIRECT_URL="postgresql://dummy" npx prisma generate --schema=packages/database/prisma/schema.prisma && \
     echo "--- Building shared ---" && \
     npm run build -w packages/shared && \
     ls packages/shared/dist/index.js && \
