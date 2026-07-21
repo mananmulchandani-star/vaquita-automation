@@ -1,0 +1,794 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  AGENT
+}
+
+enum OptInStatus {
+  OPTED_IN
+  OPTED_OUT
+  BLOCKED
+}
+
+enum FinancialStatus {
+  PENDING
+  AUTHORIZED
+  PARTIALLY_PAID
+  PAID
+  PARTIALLY_REFUNDED
+  REFUNDED
+  VOIDED
+}
+
+enum FulfillmentStatus {
+  UNFULFILLED
+  PARTIAL
+  FULFILLED
+  RESTOCKED
+}
+
+enum PaymentMethod {
+  COD
+  PREPAID
+}
+
+enum RtoRisk {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum MessageDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum MessageType {
+  TEXT
+  TEMPLATE
+  IMAGE
+  VIDEO
+  DOCUMENT
+  BUTTON
+  LIST
+  INTERACTIVE
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  READ
+  FAILED
+}
+
+enum TemplateCategory {
+  MARKETING
+  UTILITY
+  AUTHENTICATION
+}
+
+enum TemplateStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AutomationTrigger {
+  ORDER_CREATED
+  ORDER_UPDATED
+  ORDER_CANCELLED
+  FULFILLMENT_CREATED
+  FULFILLMENT_UPDATED
+  CUSTOMER_CREATED
+  CUSTOMER_REPLIED
+  SCHEDULED
+  MANUAL
+  ABANDONED_CART
+  BACK_IN_STOCK
+}
+
+enum AutomationRunStatus {
+  RUNNING
+  WAITING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  RUNNING
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum QueueStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+enum ShippingStatus {
+  PICKED_UP
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  RETURNED
+  FAILED_DELIVERY
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum ReturnStatus {
+  REQUESTED
+  APPROVED
+  PICKED_UP
+  RECEIVED
+  REFUNDED
+  REJECTED
+}
+
+enum ExchangeStatus {
+  REQUESTED
+  APPROVED
+  SHIPPED
+  COMPLETED
+  REJECTED
+}
+
+enum CampaignRecipientStatus {
+  PENDING
+  SENT
+  DELIVERED
+  READ
+  CLICKED
+  REPLIED
+  FAILED
+}
+
+model Store {
+  id               String    @id @default(uuid())
+  shopifyDomain    String    @unique
+  shopifyStoreId   String?   @unique
+  name             String
+  email            String
+  shopifyPlan      String?
+  currency         String    @default("INR")
+  timezone         String    @default("Asia/Kolkata")
+  
+  // --- SHOPIFY INTEGRATION ---
+  shopifyAccessToken String?   // Encrypted
+  shopifyApiKey      String?   // Encrypted
+  shopifyApiSecret   String?   // Encrypted
+  shopifyWebhookSecret String? // Encrypted
+
+  // --- WHATSAPP INTEGRATION ---
+  waAppId            String?
+  waAppSecret        String?   // Encrypted
+  waAccessToken      String?   // Encrypted
+  waPhoneNumberId    String?
+  waWabaId           String?
+  waVerifyToken      String?   // Encrypted
+  waWebhookSecret    String?   // Encrypted
+  waApiVersion       String?   @default("v21.0")
+
+  // --- BRAND SETTINGS ---
+  brandName          String?
+  supportNumber      String?
+  defaultCountry     String?   @default("IN")
+  defaultLanguage    String?   @default("en")
+  
+  isIntegrationComplete Boolean @default(false)
+
+  isActive         Boolean   @default(true)
+  installedAt      DateTime  @default(now())
+  uninstalledAt    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  users            User[]
+  customers        Customer[]
+  orders           Order[]
+  messages         WhatsAppMessage[]
+  templates        WhatsAppTemplate[]
+  automations      Automation[]
+  automationRuns   AutomationRun[]
+  campaigns        Campaign[]
+  customerReplies  CustomerReply[]
+  activityLogs     ActivityLog[]
+  webhookLogs      WebhookLog[]
+  shippingUpdates  ShippingUpdate[]
+  broadcasts       Broadcast[]
+  settings         Setting[]
+  notificationQueues NotificationQueue[]
+  messageQueues    MessageQueue[]
+  medias           Media[]
+  couponCodes      CouponCode[]
+  returns          Return[]
+  exchanges        Exchange[]
+  analytics        Analytics[]
+
+  @@map("stores")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id])
+  email         String
+  name          String
+  role          UserRole
+  passwordHash  String
+  lastLoginAt   DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@index([storeId])
+  @@index([email])
+  @@map("users")
+}
+
+model Customer {
+  id                     String    @id @default(uuid())
+  storeId                String
+  store                  Store     @relation(fields: [storeId], references: [id])
+  shopifyCustomerId      String
+  email                  String?
+  phone                  String?
+  firstName              String?
+  lastName               String?
+  whatsappOptIn          OptInStatus @default(OPTED_IN)
+  totalSpend             Decimal   @default(0)
+  orderCount             Int       @default(0)
+  averageOrderValue      Decimal   @default(0)
+  customerLifetimeValue  Decimal   @default(0)
+  firstOrderAt           DateTime?
+  lastOrderAt            DateTime?
+  tags                   String[]
+  city                   String?
+  state                  String?
+  country                String?
+  pincode                String?
+  notes                  String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+  deletedAt              DateTime?
+
+  orders                 Order[]
+  messages               WhatsAppMessage[]
+  campaignRecipients     CampaignRecipient[]
+  replies                CustomerReply[]
+  returns                Return[]
+  exchanges              Exchange[]
+
+  @@unique([storeId, shopifyCustomerId])
+  @@index([storeId])
+  @@index([phone])
+  @@index([email])
+  @@map("customers")
+}
+
+model Order {
+  id                 String    @id @default(uuid())
+  storeId            String
+  store              Store     @relation(fields: [storeId], references: [id])
+  customerId         String?
+  customer           Customer? @relation(fields: [customerId], references: [id])
+  shopifyOrderId     String
+  orderNumber        String
+  email              String?
+  phone              String?
+  financialStatus    FinancialStatus
+  fulfillmentStatus  FulfillmentStatus
+  paymentMethod      PaymentMethod
+  currency           String    @default("INR")
+  totalPrice         Decimal
+  subtotalPrice      Decimal
+  totalDiscount      Decimal   @default(0)
+  totalTax           Decimal   @default(0)
+  lineItems          Json
+  shippingAddress    Json?
+  billingAddress     Json?
+  codConfirmed       Boolean   @default(false)
+  codConfirmedAt     DateTime?
+  rtoRisk            RtoRisk   @default(LOW)
+  tags               String[]
+  note               String?
+  cancelledAt        DateTime?
+  cancelReason       String?
+  shopifyCreatedAt   DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  deletedAt          DateTime?
+
+  messages           WhatsAppMessage[]
+  shippingUpdates    ShippingUpdate[]
+  returns            Return[]
+  exchanges          Exchange[]
+
+  @@unique([storeId, shopifyOrderId])
+  @@index([storeId])
+  @@index([customerId])
+  @@index([orderNumber])
+  @@map("orders")
+}
+
+model WhatsAppMessage {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  customerId       String?
+  customer         Customer? @relation(fields: [customerId], references: [id])
+  orderId          String?
+  order            Order?    @relation(fields: [orderId], references: [id])
+  waMessageId      String?   @unique
+  direction        MessageDirection
+  type             MessageType
+  status           MessageStatus
+  templateName     String?
+  templateLanguage String?
+  content          String?   // text
+  mediaUrl         String?
+  mediaType        String?
+  buttonPayload    String?
+  errorCode        String?
+  errorMessage     String?
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  failedAt         DateTime?
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  campaignRecipients CampaignRecipient[]
+
+  @@index([storeId])
+  @@index([customerId])
+  @@index([orderId])
+  @@index([waMessageId])
+  @@map("whatsapp_messages")
+}
+
+model WhatsAppTemplate {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  waTemplateId     String?
+  name             String
+  language         String    @default("en")
+  category         TemplateCategory
+  status           TemplateStatus
+  components       Json
+  variables        String[]
+  headerType       String?
+  bodyText         String?
+  footerText       String?
+  buttons          Json?
+  version          Int       @default(1)
+  rejectedReason   String?
+  lastSyncedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@unique([storeId, name, language])
+  @@index([storeId])
+  @@map("whatsapp_templates")
+}
+
+model Automation {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  name             String
+  description      String?
+  triggerType      AutomationTrigger
+  isActive         Boolean   @default(false)
+  flowDefinition   Json
+  triggerConfig    Json?
+  totalRuns        Int       @default(0)
+  successfulRuns   Int       @default(0)
+  failedRuns       Int       @default(0)
+  lastRunAt        DateTime?
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  runs             AutomationRun[]
+
+  @@index([storeId])
+  @@map("automations")
+}
+
+model AutomationRun {
+  id               String    @id @default(uuid())
+  automationId     String
+  automation       Automation @relation(fields: [automationId], references: [id])
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  orderId          String?
+  customerId       String?
+  status           AutomationRunStatus
+  currentStep      String?
+  context          Json
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+  failedAt         DateTime?
+  error            String?
+  logs             Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  customerReplies  CustomerReply[]
+
+  @@index([automationId])
+  @@index([storeId])
+  @@map("automation_runs")
+}
+
+model Campaign {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  name             String
+  description      String?
+  status           CampaignStatus
+  templateId       String
+  segmentFilter    Json
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  audienceSize     Int       @default(0)
+  sentCount        Int       @default(0)
+  deliveredCount   Int       @default(0)
+  readCount        Int       @default(0)
+  repliedCount     Int       @default(0)
+  failedCount      Int       @default(0)
+  clickCount       Int       @default(0)
+  revenueGenerated Decimal   @default(0)
+  abTestEnabled    Boolean   @default(false)
+  abTestConfig     Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  recipients       CampaignRecipient[]
+
+  @@index([storeId])
+  @@map("campaigns")
+}
+
+model CampaignRecipient {
+  id               String    @id @default(uuid())
+  campaignId       String
+  campaign         Campaign  @relation(fields: [campaignId], references: [id])
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  status           CampaignRecipientStatus
+  messageId        String?
+  message          WhatsAppMessage? @relation(fields: [messageId], references: [id])
+  sentAt           DateTime?
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  clickedAt        DateTime?
+  repliedAt        DateTime?
+  failedAt         DateTime?
+  error            String?
+  abTestVariant    String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([campaignId])
+  @@index([customerId])
+  @@map("campaign_recipients")
+}
+
+model CustomerReply {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  messageId        String
+  automationRunId  String?
+  automationRun    AutomationRun? @relation(fields: [automationRunId], references: [id])
+  content          String
+  type             MessageType
+  matchedKeyword   String?
+  processedAt      DateTime?
+  isProcessed      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([customerId])
+  @@map("customer_replies")
+}
+
+model ActivityLog {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  userId           String?
+  action           String
+  entity           String
+  entityId         String
+  metadata         Json?
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@map("activity_logs")
+}
+
+model WebhookLog {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  topic            String
+  shopifyWebhookId String
+  payload          Json
+  headers          Json
+  processedAt      DateTime?
+  processingDuration Int?
+  error            String?
+  retryCount       Int       @default(0)
+  isProcessed      Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@map("webhook_logs")
+}
+
+model ShippingUpdate {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  orderId          String
+  order            Order     @relation(fields: [orderId], references: [id])
+  carrier          String
+  trackingNumber   String
+  trackingUrl      String?
+  status           ShippingStatus
+  estimatedDelivery DateTime?
+  actualDelivery   DateTime?
+  rawPayload       Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([orderId])
+  @@map("shipping_updates")
+}
+
+model Broadcast {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  name             String
+  status           CampaignStatus
+  templateId       String
+  audienceFilter   Json
+  audienceSize     Int       @default(0)
+  sentCount        Int       @default(0)
+  deliveredCount   Int       @default(0)
+  readCount        Int       @default(0)
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@map("broadcasts")
+}
+
+model Setting {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  key              String
+  value            Json
+  category         String
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@unique([storeId, key])
+  @@map("settings")
+}
+
+model NotificationQueue {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  type             String
+  priority         Int       @default(3)
+  payload          Json
+  status           QueueStatus @default(PENDING)
+  attempts         Int       @default(0)
+  maxAttempts      Int       @default(5)
+  nextRetryAt      DateTime?
+  lastAttemptAt    DateTime?
+  completedAt      DateTime?
+  error            String?
+  deadLetteredAt   DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([status, nextRetryAt])
+  @@map("notification_queues")
+}
+
+model MessageQueue {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  priority         Int       @default(3)
+  payload          Json
+  status           QueueStatus @default(PENDING)
+  attempts         Int       @default(0)
+  maxAttempts      Int       @default(5)
+  nextRetryAt      DateTime?
+  lastAttemptAt    DateTime?
+  completedAt      DateTime?
+  error            String?
+  deadLetteredAt   DateTime?
+  batchId          String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([status, nextRetryAt])
+  @@map("message_queues")
+}
+
+model Media {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  filename         String
+  originalFilename String
+  mimeType         String
+  size             Int
+  url              String
+  supabasePath     String?
+  waMediaId        String?
+  purpose          String    // TEMPLATE/MESSAGE/CAMPAIGN
+  metadata         Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@map("medias")
+}
+
+model CouponCode {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  customerId       String?
+  orderId          String?
+  code             String    @unique
+  shopifyPriceRuleId String?
+  shopifyDiscountId String?
+  discountType     DiscountType
+  value            Decimal
+  currency         String    @default("INR")
+  minimumPurchase  Decimal?
+  usageLimit       Int       @default(1)
+  usageCount       Int       @default(0)
+  isActive         Boolean   @default(true)
+  expiresAt        DateTime?
+  usedAt           DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@map("coupon_codes")
+}
+
+model Return {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  orderId          String
+  order            Order     @relation(fields: [orderId], references: [id])
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  shopifyReturnId  String?
+  status           ReturnStatus
+  reason           String?
+  items            Json
+  refundAmount     Decimal   @default(0)
+  trackingNumber   String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([orderId])
+  @@map("returns")
+}
+
+model Exchange {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  orderId          String
+  order            Order     @relation(fields: [orderId], references: [id])
+  customerId       String
+  customer         Customer  @relation(fields: [customerId], references: [id])
+  status           ExchangeStatus
+  reason           String?
+  originalItems    Json
+  newItems         Json
+  priceDifference  Decimal   @default(0)
+  newOrderId       String?
+  trackingNumber   String?
+  notes            String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@index([storeId])
+  @@index([orderId])
+  @@map("exchanges")
+}
+
+model Analytics {
+  id               String    @id @default(uuid())
+  storeId          String
+  store            Store     @relation(fields: [storeId], references: [id])
+  date             DateTime  @db.Date
+  metric           String
+  value            Decimal
+  dimensions       Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  @@unique([storeId, date, metric])
+  @@index([storeId])
+  @@map("analytics")
+}

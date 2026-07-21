@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-vaquita-bg text-vaquita-text font-sans antialiased;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-vaquita-bg-elevated/70 backdrop-blur-md border border-vaquita-border shadow-glass;
+  }
+  
+  .glass-card {
+    @apply bg-vaquita-bg-secondary/50 backdrop-blur-sm border border-vaquita-border rounded-xl shadow-sm hover:border-vaquita-border-light transition-colors;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    @apply bg-vaquita-border rounded-full hover:bg-vaquita-border-light transition-colors;
+  }
+}
