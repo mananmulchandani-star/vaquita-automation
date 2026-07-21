@@ -12,15 +12,28 @@ RUN npm ci
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
-RUN npm run build -w packages/shared
-RUN ls -la packages/shared/dist/ && echo "✅ Shared dist OK"
-RUN npm run build -w packages/database
-# Verify database dist was created
-RUN ls -la packages/database/dist/ && echo "✅ Database dist OK"
-RUN npm run build -w apps/backend
-RUN npm run build -w apps/frontend
+# Copy all source files
+COPY packages/ ./packages/
+COPY apps/ ./apps/
+COPY tsconfig.base.json ./
+COPY package.json ./
+# Single uncacheable build step - generates prisma, builds all workspaces, verifies all dists
+RUN npx prisma generate --schema=packages/database/prisma/schema.prisma && \
+    echo "--- Building shared ---" && \
+    npm run build -w packages/shared && \
+    ls packages/shared/dist/index.js && \
+    echo "✅ Shared dist OK" && \
+    echo "--- Building database ---" && \
+    npm run build -w packages/database && \
+    ls packages/database/dist/index.js && \
+    echo "✅ Database dist OK" && \
+    echo "--- Building backend ---" && \
+    npm run build -w apps/backend && \
+    echo "✅ Backend dist OK" && \
+    echo "--- Building frontend ---" && \
+    npm run build -w apps/frontend && \
+    echo "✅ Frontend dist OK" && \
+    echo "=== ALL BUILDS PASSED ==="
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner
