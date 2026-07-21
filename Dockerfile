@@ -15,6 +15,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
 RUN npm run build -w packages/shared
+RUN ls -la packages/shared/dist/ && echo "✅ Shared dist OK"
 RUN npm run build -w packages/database
 # Verify database dist was created
 RUN ls -la packages/database/dist/ && echo "✅ Database dist OK"
