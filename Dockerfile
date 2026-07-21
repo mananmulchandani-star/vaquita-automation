@@ -14,7 +14,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate --schema=packages/database/prisma/schema.prisma
-RUN npm run build
+RUN npm run build -w packages/shared
+RUN npm run build -w packages/database
+RUN npm run build -w apps/backend
+RUN npm run build -w apps/frontend
 
 # Stage 3: Runner
 FROM node:22-alpine AS runner
