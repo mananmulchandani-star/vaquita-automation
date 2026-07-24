@@ -120,7 +120,7 @@ router.post('/test-whatsapp', requireRole('ADMIN'), async (req: Request, res: Re
     }
 
     // Try creating client & fetching business profile as a test
-    const { getWhatsAppClient } = await import('../lib/whatsapp');
+    const { getWhatsAppClient } = await import('../lib/whatsapp.js');
     const waClient = await getWhatsAppClient(storeId);
     
     let result: any = null;

@@ -6,7 +6,7 @@ import { prisma } from '../../config/database';
 import { encrypt } from '../../lib/encryption';
 import { logger } from '../../config/logger';
 import { AppError, UnauthorizedError, ValidationError } from '../../lib/errors';
-import { registerWebhooks } from './webhook.service';
+import { webhookService } from './webhook.service';
 
 export interface ShopifyOAuthResult {
   storeId: string;
@@ -74,7 +74,6 @@ export const handleOAuthCallback = async (
 
   // 2. Exchange code for access token with Shopify
   let accessToken: string;
-  let scope: string;
 
   try {
     const response = await axios.post(`https://${normalizedShop}/admin/oauth/access_token`, {
@@ -84,7 +83,6 @@ export const handleOAuthCallback = async (
     });
 
     accessToken = response.data.access_token;
-    scope = response.data.scope;
   } catch (error: any) {
     logger.error({ err: error.response?.data || error.message }, 'Shopify access token exchange failed');
     throw new AppError('Failed to complete Shopify OAuth access token exchange', 500);
@@ -102,7 +100,6 @@ export const handleOAuthCallback = async (
       shopifyAccessToken: encryptedAccessToken,
       shopifyApiKey: encryptedApiKey,
       shopifyApiSecret: encryptedApiSecret,
-      scopesGranted: scope.split(','),
       isActive: true,
       uninstalledAt: null,
       updatedAt: new Date(),
@@ -114,7 +111,6 @@ export const handleOAuthCallback = async (
       shopifyAccessToken: encryptedAccessToken,
       shopifyApiKey: encryptedApiKey,
       shopifyApiSecret: encryptedApiSecret,
-      scopesGranted: scope.split(','),
       isActive: true,
     },
   });
@@ -131,6 +127,7 @@ export const handleOAuthCallback = async (
         email: store.email,
         name: `Admin (${store.name})`,
         role: 'ADMIN',
+        passwordHash: '',
         isActive: true,
       },
     });
@@ -140,11 +137,11 @@ export const handleOAuthCallback = async (
   const jwtToken = jwt.sign(
     { userId: user.id, storeId: store.id, role: user.role },
     env.JWT_SECRET,
-    { expiresIn: env.JWT_EXPIRY || '15m' }
+    { expiresIn: (env.JWT_EXPIRY || '15m') as any }
   );
 
   // 7. Register Webhooks asynchronously (non-blocking)
-  registerWebhooks(store.id, accessToken).catch((err) => {
+  webhookService.registerWebhooks(store.shopifyDomain, accessToken).catch((err: any) => {
     logger.error({ err, storeId: store.id }, 'Background webhook registration error');
   });
 
