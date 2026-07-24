@@ -72,19 +72,10 @@ const port = Number(process.env.PORT) || env.PORT || 3001;
 server.listen(port, '0.0.0.0', () => {
   logger.info(`🚀 HTTP Server listening on 0.0.0.0:${port} in ${env.NODE_ENV} mode`);
 
-  // 3. Asynchronous background migration & database connection
-  exec('./node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma', (err, stdout, stderr) => {
-    if (err) {
-      logger.warn({ err: err.message, stderr }, 'Database migration background warning (may already be up to date)');
-    } else {
-      logger.info({ stdout: stdout.trim() }, 'Database migration check completed');
-    }
-
-    // Connect Prisma after migration check
-    prisma.$connect()
-      .then(() => logger.info('Database connected successfully'))
-      .catch((e) => logger.error({ err: e.message }, 'Background DB connection warning'));
-  });
+  // 3. Connect Prisma
+  prisma.$connect()
+    .then(() => logger.info('Database connected successfully'))
+    .catch((e) => logger.error({ err: e.message }, 'Background DB connection warning'));
 
   // 4. Asynchronous BullMQ background init
   startBullMQ()
