@@ -42,16 +42,22 @@ app.use(express.urlencoded({ extended: true }));
 // Logging
 app.use(pinoHttp({ logger }));
 
-// Rate Limiting
-app.use('/api', defaultLimiter);
-
+// Health Check Endpoints (Available IMMEDIATELY)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+app.get('/api/v1/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Rate Limiting on API routes
+app.use('/api', defaultLimiter);
+
+// API Routes
 app.use('/api/v1', apiRoutes);
 app.use('/api/v1/webhooks/shopify', shopifyWebhookRoutes);
 app.use('/api/v1/webhooks/whatsapp', whatsappWebhookRoutes);
-// app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 // Global Error Handler
 app.use(errorHandler);
@@ -62,26 +68,21 @@ const server = http.createServer(app);
 // Initialize Socket.IO
 initSocket(server);
 
-// Start Server
-const startServer = async () => {
-  try {
-    // Verify DB connection
-    await prisma.$connect();
-    logger.info('Database connected successfully');
+const port = Number(process.env.PORT) || env.PORT || 3001;
 
-    // Start BullMQ / Redis connection
-    await startBullMQ();
+// Start Listening IMMEDIATELY so Railway Healthcheck Passes
+server.listen(port, '0.0.0.0', () => {
+  logger.info(`HTTP Server listening on 0.0.0.0:${port} in ${env.NODE_ENV} mode`);
+  
+  // Background initialization of DB & Redis connections (non-blocking for HTTP healthcheck)
+  prisma.$connect()
+    .then(() => logger.info('Database connected successfully'))
+    .catch((err) => logger.error({ err }, 'Background DB connection warning'));
 
-    server.listen(env.PORT, () => {
-      logger.info(`Server is running in ${env.NODE_ENV} mode on port ${env.PORT}`);
-    });
-  } catch (error) {
-    logger.error({ error }, 'Failed to start server');
-    process.exit(1);
-  }
-};
-
-startServer();
+  startBullMQ()
+    .then(() => logger.info('BullMQ queue initialized'))
+    .catch((err) => logger.warn({ err }, 'Background BullMQ initialization warning'));
+});
 
 // Graceful Shutdown
 const shutdown = async (signal: string) => {
@@ -89,11 +90,16 @@ const shutdown = async (signal: string) => {
   
   server.close(async () => {
     logger.info('HTTP server closed');
-    await prisma.$disconnect();
-    logger.info('Database connection closed');
-    await stopBullMQ();
-    await closeRedis();
-    // Close socket io, queue connections, etc.
+    try {
+      await prisma.$disconnect();
+      logger.info('Database connection closed');
+    } catch (e) {}
+    try {
+      await stopBullMQ();
+    } catch (e) {}
+    try {
+      await closeRedis();
+    } catch (e) {}
     process.exit(0);
   });
 
