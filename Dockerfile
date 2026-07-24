@@ -60,4 +60,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3001/health || exit 1
 
-CMD ["sh", "-c", "echo \"--- DIST CONTENTS ---\" && ls -la apps/backend/dist && echo \"--- CONFIG CONTENTS ---\" && ls -la apps/backend/dist/config || echo \"NO CONFIG DIR\" && echo \"--- STARTING NODE ---\" && node apps/backend/dist/index.js"]
+CMD ["sh", "-c", "npx --yes prisma migrate deploy --schema packages/database/prisma/schema.prisma && echo \"--- STARTING NODE ---\" && node apps/backend/dist/index.js"]
