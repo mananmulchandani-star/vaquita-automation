@@ -1,4 +1,4 @@
-console.log('=== VAQUITA BACKEND STARTING ===');
+console.log('=== VAQUITA BACKEND STARTING (WITH PRISMA MIGRATION FIX) ===');
 import express from 'express';
 import http from 'http';
 import compression from 'compression';
