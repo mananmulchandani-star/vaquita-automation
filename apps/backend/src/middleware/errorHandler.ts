@@ -72,6 +72,7 @@ export const errorHandler = (
       response.error = {
         code: 'DATABASE_ERROR',
         message: 'Database operation failed',
+        details: err.message
       };
     }
   } else if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
