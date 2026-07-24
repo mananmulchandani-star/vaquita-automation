@@ -1,26 +1,24 @@
 import express from 'express';
 import http from 'http';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import pinoHttp from 'pino-http';
 import { exec } from 'child_process';
 
-import { env } from './config/env';
-import { logger } from './config/logger';
-import { prisma } from './config/database';
-import { requestIdMiddleware } from './middleware/requestId';
-import { corsMiddleware } from './middleware/cors';
-import { helmetMiddleware } from './middleware/helmet';
-import { defaultLimiter } from './middleware/rateLimiter';
-import { errorHandler } from './middleware/errorHandler';
-import { initSocket } from './lib/socket';
-import { startBullMQ, stopBullMQ } from './lib/queue';
-import { closeRedis } from './lib/redis';
-import apiRoutes from './routes';
-import shopifyWebhookRoutes from './routes/shopify/webhook.routes';
-import whatsappWebhookRoutes from './routes/whatsapp/webhook.routes';
+import { env } from './config/env.js';
+import { logger } from './config/logger.js';
+import { prisma } from './config/database.js';
+import { requestIdMiddleware } from './middleware/requestId.js';
+import { corsMiddleware } from './middleware/cors.js';
+import { helmetMiddleware } from './middleware/helmet.js';
+import { defaultLimiter } from './middleware/rateLimiter.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { initSocket } from './lib/socket.js';
+import { startBullMQ, stopBullMQ } from './lib/queue.js';
+import { closeRedis } from './lib/redis.js';
+import apiRoutes from './routes/index.js';
+import shopifyWebhookRoutes from './routes/shopify/webhook.routes.js';
+import whatsappWebhookRoutes from './routes/whatsapp/webhook.routes.js';
 
 // Initialize Express App
 const app = express();
