@@ -69,6 +69,8 @@ initSocket(server);
 const port = Number(process.env.PORT) || env.PORT || 3001;
 
 // 2. Start Listening IMMEDIATELY on 0.0.0.0 so Railway Healthcheck succeeds in Attempt #1 (< 1s)
+export let globalMigrationError: any = null;
+
 const startServer = async () => {
   try {
     // 1. Run database migrations synchronously BEFORE starting the server
@@ -78,8 +80,8 @@ const startServer = async () => {
       const output = execSync('./node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma', { encoding: 'utf-8' });
       logger.info({ output }, 'Database migration completed successfully');
     } catch (migrationError: any) {
+      globalMigrationError = migrationError;
       logger.error({ err: migrationError.message, stdout: migrationError.stdout, stderr: migrationError.stderr }, 'Database migration failed');
-      // Continue anyway, maybe the DB is fine
     }
 
     // 2. Connect Prisma

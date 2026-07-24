@@ -5,6 +5,8 @@ import { prisma } from '../../config/database';
 import jwt from 'jsonwebtoken';
 import { UnauthorizedError, ValidationError } from '../../lib/errors';
 
+import { globalMigrationError } from '../../index';
+
 const router = Router();
 
 /**
@@ -13,6 +15,21 @@ const router = Router();
  */
 router.get('/', (req: Request, res: Response, next: NextFunction) => {
   try {
+    if (globalMigrationError) {
+      return res.status(500).json({
+        success: false,
+        error: {
+          code: 'FATAL_MIGRATION_ERROR',
+          message: 'The database is completely empty because migration failed on boot',
+          details: {
+            message: globalMigrationError.message,
+            stdout: globalMigrationError.stdout?.toString(),
+            stderr: globalMigrationError.stderr?.toString()
+          }
+        }
+      });
+    }
+
     const shop = req.query.shop as string;
     if (!shop) {
       throw new ValidationError('Query parameter "shop" is required');
