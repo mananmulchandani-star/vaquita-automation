@@ -6,9 +6,18 @@ const dbLogger = logger.child({ module: 'Database' });
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient };
 
+// Railway exposes host CPUs, making Prisma try to open 97+ connections instantly.
+// This overloads Railway's internal TCP proxy and causes random "Authentication failed" errors.
+// We force a sane connection limit by appending it to the URL at runtime.
+let dbUrl = process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/vaquita';
+if (dbUrl && !dbUrl.includes('connection_limit')) {
+  dbUrl = dbUrl.includes('?') ? `${dbUrl}&connection_limit=5` : `${dbUrl}?connection_limit=5`;
+}
+
 export const prisma =
   globalForPrisma.prisma ||
   new PrismaClient({
+    datasourceUrl: dbUrl,
     log: [
       {
         emit: 'event',
