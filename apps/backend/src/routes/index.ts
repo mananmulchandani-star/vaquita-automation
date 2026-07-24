@@ -9,6 +9,7 @@ import customersRoutes from './customers.routes';
 import campaignsRoutes from './campaigns.routes';
 import automationsRoutes from './automations.routes';
 import templatesRoutes from './templates.routes';
+import settingsRoutes from './settings.routes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/customers', customersRoutes);
 router.use('/campaigns', campaignsRoutes);
 router.use('/automations', automationsRoutes);
 router.use('/templates', templatesRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;

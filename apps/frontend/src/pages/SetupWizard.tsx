@@ -1,12 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Store, MessageSquare, ShieldCheck, Check, ArrowRight, ArrowLeft } from 'lucide-react';
 import api from '../api/client';
 
 export const SetupWizard: React.FC = () => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    if (token) {
+      localStorage.setItem('auth_token', token);
+      // Clean up URL
+      window.history.replaceState({}, document.title, '/setup');
+    }
+  }, [location]);
   
   const [formData, setFormData] = useState({
     shopifyDomain: '',
