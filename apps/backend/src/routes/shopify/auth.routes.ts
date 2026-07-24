@@ -23,6 +23,7 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
           message: 'The database is completely empty because migration failed on boot',
           details: {
             message: globalMigrationError.message,
+            dbUrlPrefix: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) : 'UNDEFINED!',
             stdout: globalMigrationError.stdout?.toString(),
             stderr: globalMigrationError.stderr?.toString()
           }

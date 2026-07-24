@@ -77,7 +77,12 @@ const startServer = async () => {
     logger.info('Running database migrations...');
     const { execSync } = require('child_process');
     try {
-      const output = execSync('./node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma', { encoding: 'utf-8' });
+      const dbUrl = process.env.DATABASE_URL || '';
+      logger.info({ urlPrefix: dbUrl.substring(0, 30) }, 'Using DATABASE_URL for migration');
+      const output = execSync('./node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma', { 
+        encoding: 'utf-8',
+        env: { ...process.env, DATABASE_URL: dbUrl }
+      });
       logger.info({ output }, 'Database migration completed successfully');
     } catch (migrationError: any) {
       globalMigrationError = migrationError;
