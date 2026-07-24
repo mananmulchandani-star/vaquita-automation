@@ -1,42 +1,59 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
-import { redisConnection } from './redis';
+import { getRedisConnection, closeRedis } from './redis';
 import { logger } from '../config/logger';
 
-const QUEUE_NAME = 'vaquita-high-priority';
+const QUEUE_NAME = 'vaquita-messages';
 
-export const highPriorityQueue = new Queue(QUEUE_NAME, {
-  connection: redisConnection,
-});
+let _queue: Queue | null = null;
+let _worker: Worker | null = null;
+let _events: QueueEvents | null = null;
 
-export const highPriorityWorker = new Worker(
-  QUEUE_NAME,
-  async (job) => {
-    logger.info({ jobId: job.id, data: job.data }, 'Processing high priority job via BullMQ');
-    // Implement BullMQ processing logic here if needed
-    return { processed: true };
-  },
-  {
-    connection: redisConnection,
-    concurrency: 10,
+export function getQueue(): Queue {
+  if (!_queue) {
+    _queue = new Queue(QUEUE_NAME, {
+      connection: getRedisConnection(),
+    });
   }
-);
+  return _queue;
+}
 
-highPriorityWorker.on('completed', (job) => {
-  logger.info({ jobId: job.id }, 'BullMQ job completed');
-});
+export async function startBullMQ(): Promise<void> {
+  const connection = getRedisConnection();
+  
+  _worker = new Worker(
+    QUEUE_NAME,
+    async (job) => {
+      logger.info({ jobId: job.id, jobName: job.name }, 'Processing job');
+      // TODO: Route to actual job processors based on job.name
+      return { processed: true };
+    },
+    {
+      connection,
+      concurrency: 10,
+    }
+  );
 
-highPriorityWorker.on('failed', (job, err) => {
-  logger.error({ jobId: job?.id, err }, 'BullMQ job failed');
-});
+  _worker.on('completed', (job) => {
+    logger.info({ jobId: job.id }, 'Job completed');
+  });
 
-const queueEvents = new QueueEvents(QUEUE_NAME, {
-  connection: redisConnection,
-});
+  _worker.on('failed', (job, err) => {
+    logger.error({ jobId: job?.id, err }, 'Job failed');
+  });
 
-queueEvents.on('error', (err) => {
-  logger.error({ err }, 'BullMQ events error');
-});
+  _events = new QueueEvents(QUEUE_NAME, { connection });
+  _events.on('error', (err) => {
+    logger.error({ err }, 'BullMQ events error');
+  });
 
-export const startBullMQ = async () => {
-  logger.info('BullMQ worker initialized and connected to Redis');
-};
+  logger.info('BullMQ worker initialized');
+}
+
+export async function stopBullMQ(): Promise<void> {
+  if (_worker) await _worker.close();
+  if (_events) await _events.close();
+  if (_queue) await _queue.close();
+  _worker = null;
+  _events = null;
+  _queue = null;
+}

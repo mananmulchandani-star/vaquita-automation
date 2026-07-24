@@ -18,6 +18,7 @@ COPY apps/ ./apps/
 COPY tsconfig.base.json ./
 COPY package.json ./
 # Single uncacheable build step - generates prisma, builds all workspaces, verifies all dists
+RUN apk add --no-cache openssl
 RUN DATABASE_URL="postgresql://dummy" DIRECT_URL="postgresql://dummy" npx prisma generate --schema=packages/database/prisma/schema.prisma && \
     echo "--- Building shared ---" && \
     npm run build -w packages/shared && \
@@ -41,7 +42,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 
-RUN apk add --no-cache curl
+RUN apk add --no-cache curl openssl
 
 COPY --from=builder /app/package.json ./
 COPY --from=builder /app/node_modules ./node_modules

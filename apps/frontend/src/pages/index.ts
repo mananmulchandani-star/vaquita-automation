@@ -15,3 +15,4 @@ export * from './Settings';
 export * from './Analytics';
 export * from './ActivityLog';
 export * from './SetupWizard';
+export * from './Login';

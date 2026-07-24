@@ -15,7 +15,8 @@ import { helmetMiddleware } from './middleware/helmet';
 import { defaultLimiter } from './middleware/rateLimiter';
 import { errorHandler } from './middleware/errorHandler';
 import { initSocket } from './lib/socket';
-import { startBullMQ } from './lib/queue';
+import { startBullMQ, stopBullMQ } from './lib/queue';
+import { closeRedis } from './lib/redis';
 import apiRoutes from './routes';
 import shopifyWebhookRoutes from './routes/shopify/webhook.routes';
 import whatsappWebhookRoutes from './routes/whatsapp/webhook.routes';
@@ -90,6 +91,8 @@ const shutdown = async (signal: string) => {
     logger.info('HTTP server closed');
     await prisma.$disconnect();
     logger.info('Database connection closed');
+    await stopBullMQ();
+    await closeRedis();
     // Close socket io, queue connections, etc.
     process.exit(0);
   });

@@ -17,12 +17,14 @@ import {
   Settings,
   Analytics,
   ActivityLog,
-  SetupWizard
+  SetupWizard,
+  Login
 } from './pages';
 
 export function AppRoutes() {
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
       <Route path="/setup" element={<SetupWizard />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Dashboard />} />
