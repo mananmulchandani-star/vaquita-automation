@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../config/database';
 import { schedulerService } from '../../queue/scheduler.service';
 
 export async function executeDelay(run: any, block: any): Promise<boolean> {

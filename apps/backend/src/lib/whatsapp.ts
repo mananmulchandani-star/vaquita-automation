@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { logger } from '../config/logger';
 import { ExternalServiceError } from './errors';
 import { StoreContext } from '@vaquita/shared';
-import { getStoreContext } from '@/utils/context';
+import { getStoreContext } from '../utils/context';
 import FormDataNode from 'form-data';
 
 export class WhatsAppClient {

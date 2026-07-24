@@ -1,4 +1,4 @@
-import { logger } from '@/config/logger';
+import { logger } from '../../config/logger';
 
 export class PhoneService {
   async getBusinessProfile(storeId: string) {

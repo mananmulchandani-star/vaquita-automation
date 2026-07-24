@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { decrypt } from '@/lib/encryption';
+import { prisma } from '../config/database';
+import { decrypt } from '../lib/encryption';
 import { StoreContext } from '@vaquita/shared';
 
 export const getStoreContext = async (storeId: string): Promise<StoreContext> => {

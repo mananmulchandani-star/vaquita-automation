@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 import { executeTrigger } from './blocks/trigger';
 import { executeDelay } from './blocks/delay';
 import { executeCondition } from './blocks/condition';

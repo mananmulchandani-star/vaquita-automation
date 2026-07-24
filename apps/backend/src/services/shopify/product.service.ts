@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
-import { shopifyClient } from '@/lib/shopify';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
+import { shopifyClient } from '../../lib/shopify';
 
 export class ProductService {
   async getProducts(storeId: string, filters: { first?: number; after?: string; query?: string }) {

@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 
 export class DeadLetterService {
   async getDeadLetterQueue(storeId: string, pagination: { skip: number; take: number }) {

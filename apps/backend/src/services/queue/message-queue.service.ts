@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 
 export class MessageQueueService {
   async enqueue(params: { storeId: string; type: string; payload: any; priority: number }) {

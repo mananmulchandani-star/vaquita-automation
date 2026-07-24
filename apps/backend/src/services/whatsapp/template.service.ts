@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
-import { getWhatsAppClient } from '@/lib/whatsapp';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
+import { getWhatsAppClient } from '../../lib/whatsapp';
 
 export class TemplateService {
   async syncTemplates(storeId: string) {

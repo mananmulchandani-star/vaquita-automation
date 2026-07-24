@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
-import { emitNewMessage } from '@/lib/socket';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
+import { emitNewMessage } from '../../lib/socket';
 import { AutomationTrigger } from '@vaquita/shared';
-import { getStoreContext } from '@/utils/context';
+import { getStoreContext } from '../../utils/context';
 
 export class WhatsAppWebhookService {
   async verifyWebhook(storeId: string, mode: string, token: string, challenge: string): Promise<string> {

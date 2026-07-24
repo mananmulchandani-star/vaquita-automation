@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../config/database';
 
 export async function executeTrigger(run: any, block: any): Promise<string | null> {
   // A trigger block usually just extracts context variables and passes them along.

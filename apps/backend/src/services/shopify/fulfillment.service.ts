@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 import { AutomationTrigger } from '@vaquita/shared';
 
 export class FulfillmentService {

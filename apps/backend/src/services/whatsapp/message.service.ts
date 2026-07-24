@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 import { messageQueueService } from '../queue/message-queue.service';
 import { MessageStatus } from '@vaquita/shared';
 

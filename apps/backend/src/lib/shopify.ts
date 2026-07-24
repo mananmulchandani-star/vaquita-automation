@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { ExternalServiceError } from './errors';
 import { logger } from '../config/logger';
-import { getStoreContext } from '@/utils/context';
+import { getStoreContext } from '../utils/context';
 
 export const SHOPIFY_QUERIES = {
   GET_ORDER: `

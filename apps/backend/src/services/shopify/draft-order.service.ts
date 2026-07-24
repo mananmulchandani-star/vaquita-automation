@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
-import { shopifyClient } from '@/lib/shopify';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
+import { shopifyClient } from '../../lib/shopify';
 
 export class DraftOrderService {
   async createDraftOrder(storeId: string, params: { customerId?: string; lineItems: any[]; shippingAddress?: any; note?: string; tags?: string[] }) {

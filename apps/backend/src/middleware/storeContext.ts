@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { prisma } from '@/lib/prisma';
-import { getStoreContext } from '@/utils/context';
-import { logger } from '@/config/logger';
+import { prisma } from '../config/database';
+import { getStoreContext } from '../utils/context';
+import { logger } from '../config/logger';
 
 export const requireStoreContext = async (req: Request, res: Response, next: NextFunction) => {
   try {

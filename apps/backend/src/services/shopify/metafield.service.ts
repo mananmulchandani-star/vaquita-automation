@@ -1,5 +1,5 @@
-import { logger } from '@/config/logger';
-import { shopifyClient } from '@/lib/shopify';
+import { logger } from '../../config/logger';
+import { shopifyClient } from '../../lib/shopify';
 
 export class MetafieldService {
   async getMetafields(storeId: string, ownerId: string, ownerType: string) {

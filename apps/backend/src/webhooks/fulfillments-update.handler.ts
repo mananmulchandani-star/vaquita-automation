@@ -1,4 +1,4 @@
-import { logger } from '@/config/logger';
+import { logger } from '../config/logger';
 
 export const handleFulfillmentsUpdate = async (shop: string, payload: any) => {
   try {

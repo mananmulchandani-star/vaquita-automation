@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '../../../config/database';
 
 export async function executeCondition(run: any, block: any): Promise<string | null> {
   const { field, operator, value, trueBranch, falseBranch } = block.config;

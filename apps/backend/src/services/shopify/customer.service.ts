@@ -1,5 +1,5 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
 
 export type CustomerOptInStatus = 'OPTED_IN' | 'OPTED_OUT' | 'BLOCKED';
 

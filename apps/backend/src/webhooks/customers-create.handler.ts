@@ -1,4 +1,4 @@
-import { logger } from '@/config/logger';
+import { logger } from '../config/logger';
 
 export const handleCustomersCreate = async (shop: string, payload: any) => {
   try {

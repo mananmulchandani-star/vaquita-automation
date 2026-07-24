@@ -1,6 +1,6 @@
-import { prisma } from '@/lib/prisma';
-import { logger } from '@/config/logger';
-import { shopifyClient } from '@/lib/shopify';
+import { prisma } from '../../config/database';
+import { logger } from '../../config/logger';
+import { shopifyClient } from '../../lib/shopify';
 
 export class DiscountService {
   async createDiscount(storeId: string, params: { code: string; type: 'percentage' | 'fixed_amount'; value: number; minimumPurchase?: number; usageLimit?: number; expiresAt?: Date }) {
