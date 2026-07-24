@@ -18,7 +18,12 @@ router.get('/', (req: Request, res: Response, next: NextFunction) => {
       throw new ValidationError('Query parameter "shop" is required');
     }
 
-    const authUrl = generateAuthUrl(shop);
+    // Use dynamic host and protocol from the request to ensure redirect_uri matches EXACTLY what Shopify expects
+    const host = req.get('host');
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const baseUrl = `${protocol}://${host}`;
+
+    const authUrl = generateAuthUrl(shop, baseUrl);
     res.redirect(authUrl);
   } catch (error) {
     next(error);

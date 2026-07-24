@@ -20,7 +20,7 @@ export interface ShopifyOAuthResult {
   };
 }
 
-export const generateAuthUrl = (shop: string): string => {
+export const generateAuthUrl = (shop: string, baseUrl?: string): string => {
   if (!shop) {
     throw new ValidationError('Shop domain is required');
   }
@@ -32,7 +32,8 @@ export const generateAuthUrl = (shop: string): string => {
     : `${normalizedShop}.myshopify.com`;
 
   const state = crypto.randomBytes(16).toString('hex');
-  const redirectUri = `${env.APP_URL || `http://localhost:${env.PORT}`}/api/v1/shopify/auth/callback`;
+  const appBaseUrl = baseUrl || env.APP_URL || `http://localhost:${env.PORT}`;
+  const redirectUri = `${appBaseUrl}/api/v1/shopify/auth/callback`;
 
   const authUrl = `https://${shopDomain}/admin/oauth/authorize?` +
     `client_id=${env.SHOPIFY_API_KEY}&` +
