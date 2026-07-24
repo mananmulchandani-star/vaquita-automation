@@ -29,9 +29,7 @@ app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 
-app.get('/api/v1/health', (_req, res) => {
-  res.status(200).send('OK');
-});
+
 
 // Apply Standard Middleware
 app.use(requestIdMiddleware);
