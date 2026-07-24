@@ -1,3 +1,4 @@
+console.log('=== VAQUITA BACKEND STARTING ===');
 import express from 'express';
 import http from 'http';
 import compression from 'compression';
