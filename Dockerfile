@@ -31,6 +31,10 @@ RUN DATABASE_URL="postgresql://dummy" DIRECT_URL="postgresql://dummy" npx prisma
     echo "--- Building backend ---" && \
     npm run build -w apps/backend && \
     echo "✅ Backend dist OK" && \
+    echo "--- BUILDER DIST DEBUG ---" && \
+    ls -la apps/backend/src && \
+    ls -la apps/backend/dist && \
+    find apps/backend/dist -name "env.js" || echo "NOT FOUND" && \
     echo "--- Building frontend ---" && \
     npm run build -w apps/frontend && \
     echo "✅ Frontend dist OK" && \
