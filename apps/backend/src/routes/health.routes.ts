@@ -9,6 +9,22 @@ router.get('/', async (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+router.get('/debug', (req, res) => {
+  const maskUrl = (url?: string) => {
+    if (!url) return 'MISSING';
+    const parts = url.split('@');
+    if (parts.length === 2) {
+      return `***@${parts[1]}`;
+    }
+    return 'INVALID_FORMAT';
+  };
+
+  res.json({
+    databaseUrl: maskUrl(process.env.DATABASE_URL),
+    directUrl: maskUrl(process.env.DIRECT_URL),
+  });
+});
+
 router.get('/ready', async (req, res) => {
   const checks: Record<string, string> = {};
   let allOk = true;
