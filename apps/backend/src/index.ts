@@ -69,19 +69,38 @@ initSocket(server);
 const port = Number(process.env.PORT) || env.PORT || 3001;
 
 // 2. Start Listening IMMEDIATELY on 0.0.0.0 so Railway Healthcheck succeeds in Attempt #1 (< 1s)
-server.listen(port, '0.0.0.0', () => {
-  logger.info(`🚀 HTTP Server listening on 0.0.0.0:${port} in ${env.NODE_ENV} mode`);
+const startServer = async () => {
+  try {
+    // 1. Run database migrations synchronously BEFORE starting the server
+    logger.info('Running database migrations...');
+    const { execSync } = require('child_process');
+    try {
+      const output = execSync('./node_modules/.bin/prisma migrate deploy --schema packages/database/prisma/schema.prisma', { encoding: 'utf-8' });
+      logger.info({ output }, 'Database migration completed successfully');
+    } catch (migrationError: any) {
+      logger.error({ err: migrationError.message, stdout: migrationError.stdout, stderr: migrationError.stderr }, 'Database migration failed');
+      // Continue anyway, maybe the DB is fine
+    }
 
-  // 3. Connect Prisma
-  prisma.$connect()
-    .then(() => logger.info('Database connected successfully'))
-    .catch((e) => logger.error({ err: e.message }, 'Background DB connection warning'));
+    // 2. Connect Prisma
+    await prisma.$connect();
+    logger.info('Database connected successfully');
 
-  // 4. Asynchronous BullMQ background init
-  startBullMQ()
-    .then(() => logger.info('BullMQ queue initialized'))
-    .catch((e) => logger.warn({ err: e.message }, 'Background BullMQ initialization warning'));
-});
+    // 3. Start server
+    server.listen(port, '0.0.0.0', () => {
+      logger.info(`🚀 HTTP Server listening on 0.0.0.0:${port} in ${env.NODE_ENV} mode`);
+
+      // 4. Asynchronous BullMQ background init
+      startBullMQ()
+        .catch(err => logger.error({ err }, 'Failed to start BullMQ'));
+    });
+  } catch (error) {
+    logger.fatal({ err: error }, 'Failed to start server');
+    process.exit(1);
+  }
+};
+
+startServer();
 
 // Graceful Shutdown
 const shutdown = async (signal: string) => {
