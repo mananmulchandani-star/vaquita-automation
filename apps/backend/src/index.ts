@@ -40,9 +40,9 @@ app.use(corsMiddleware);
 app.use(compression());
 app.use(cookieParser());
 
-// Webhooks require raw body for signature verification
-app.use('/api/v1/webhooks/shopify', express.raw({ type: 'application/json' }));
-app.use('/api/v1/webhooks/whatsapp', express.json({ verify: (req: any, _res, buf) => { req.rawBody = buf; } }));
+// Webhooks require raw body for signature verification (do this BEFORE global JSON parser)
+app.use('/api/v1/shopify/webhooks', express.raw({ type: 'application/json' }), shopifyWebhookRoutes);
+app.use('/api/v1/whatsapp/webhooks', express.json({ verify: (req: any, _res, buf) => { req.rawBody = buf; } }), whatsappWebhookRoutes);
 
 // Standard body parser for other routes
 app.use(express.json());
@@ -56,8 +56,6 @@ app.use('/api', defaultLimiter);
 
 // API Routes
 app.use('/api/v1', apiRoutes);
-app.use('/api/v1/webhooks/shopify', shopifyWebhookRoutes);
-app.use('/api/v1/webhooks/whatsapp', whatsappWebhookRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

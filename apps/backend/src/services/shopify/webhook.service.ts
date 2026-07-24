@@ -23,10 +23,10 @@ export class WebhookService {
       'INVENTORY_LEVELS_UPDATE'
     ];
 
-    const appUrl = process.env.FRONTEND_URL || 'https://example.com';
+    const appUrl = process.env.APP_URL || 'https://example.com';
 
     for (const topic of topics) {
-      const callbackUrl = `${appUrl}/api/webhooks/shopify`;
+      const callbackUrl = `${appUrl}/api/v1/shopify/webhooks`;
       
       const query = `
         mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {

@@ -14,8 +14,7 @@ const router = Router();
 
 router.use('/health', healthRoutes);
 router.use('/shopify/auth', shopifyAuthRoutes);
-router.use('/shopify/webhooks', shopifyWebhookRoutes);
-router.use('/whatsapp/webhooks', whatsappWebhookRoutes);
+// Webhooks are mounted directly in index.ts to preserve raw body parsing
 router.use('/dashboard', dashboardRoutes);
 router.use('/orders', ordersRoutes);
 router.use('/customers', customersRoutes);

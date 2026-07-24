@@ -108,7 +108,8 @@ export class ShopifyClient {
   private axios: AxiosInstance;
   private shopDomain: string;
 
-  constructor(shopDomain: string, accessToken: string, apiVersion: string = '2025-07') {
+  constructor(shopDomain: string, accessToken: string) {
+    const apiVersion = process.env.SHOPIFY_API_VERSION || '2025-07';
     this.shopDomain = shopDomain;
     this.axios = axios.create({
       baseURL: `https://${shopDomain}/admin/api/${apiVersion}/graphql.json`,
