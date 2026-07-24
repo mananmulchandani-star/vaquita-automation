@@ -5,7 +5,7 @@ import { env } from '../../config/env';
 import { prisma } from '../../config/database';
 import { encrypt } from '../../lib/encryption';
 import { logger } from '../../config/logger';
-import { AppError, UnauthorizedError, ValidationError } from '../../lib/errors';
+import { ExternalServiceError, UnauthorizedError, ValidationError } from '../../lib/errors';
 import { webhookService } from './webhook.service';
 
 export interface ShopifyOAuthResult {
@@ -85,7 +85,7 @@ export const handleOAuthCallback = async (
     accessToken = response.data.access_token;
   } catch (error: any) {
     logger.error({ err: error.response?.data || error.message }, 'Shopify access token exchange failed');
-    throw new AppError('Failed to complete Shopify OAuth access token exchange', 500);
+    throw new ExternalServiceError('Failed to complete Shopify OAuth access token exchange', error.response?.data);
   }
 
   // 3. Encrypt access token before storing

@@ -9,7 +9,7 @@ export let io: SocketIOServer;
 export const initSocket = (httpServer: HttpServer) => {
   io = new SocketIOServer(httpServer, {
     cors: {
-      origin: [env.FRONTEND_URL, /\.myshopify\.com$/],
+      origin: [env.FRONTEND_URL || '*', /\.myshopify\.com$/],
       methods: ['GET', 'POST'],
       credentials: true
     }
