@@ -46,8 +46,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const storeId = req.user!.storeId;
+    const orderId = req.params.id as string;
     const order = await prisma.order.findFirst({
-      where: { id: req.params.id, storeId },
+      where: { id: orderId, storeId },
       include: {
         customer: true,
         messages: { orderBy: { createdAt: 'desc' } }
