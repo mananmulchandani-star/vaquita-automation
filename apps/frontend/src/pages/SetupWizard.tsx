@@ -96,6 +96,12 @@ export const SetupWizard: React.FC = () => {
     if (shop) {
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
       const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+      
+      if (apiUrl === '/api/v1') {
+        alert("Configuration Error: VITE_API_URL is missing in Vercel! Please add VITE_API_URL to your Vercel Environment Variables pointing to your Railway backend (e.g., https://your-app.up.railway.app/api/v1), then click 'Redeploy' in Vercel.");
+        return;
+      }
+      
       window.location.href = `${apiUrl}/shopify/auth?shop=${encodeURIComponent(cleanShop)}`;
     }
   };
