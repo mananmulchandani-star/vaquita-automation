@@ -1,8 +1,8 @@
 import api from './client';
 
 export const ordersApi = {
-  getOrders: (params: any) => api.get('/orders', { params }),
-  getOrder: (id: string) => api.get(`/orders/${id}`),
+  getOrders: (params: any = {}) => api.get('/orders', { params }),
+  getOrderById: (id: string) => api.get(`/orders/${id}`),
   getTimeline: (id: string) => api.get(`/orders/${id}/timeline`),
   confirmCOD: (id: string) => api.post(`/orders/${id}/confirm-cod`),
   cancelOrder: (id: string) => api.post(`/orders/${id}/cancel`),

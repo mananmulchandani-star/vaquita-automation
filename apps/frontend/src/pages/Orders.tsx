@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Download, Tag, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Search, Filter, Download, Tag, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { useOrders } from '@/hooks/useOrders';
 import { DataTable, Badge } from '@/components/ui';
 
@@ -9,7 +9,11 @@ export const Orders: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const { data: orders, isLoading } = useOrders({ search: searchTerm, status: statusFilter });
+  const [page, setPage] = useState(1);
+  const { data, isLoading } = useOrders({ search: searchTerm, status: statusFilter, page });
+
+  const orders = data?.data || [];
+  const meta = data?.meta || { total: 0, page: 1, limit: 20, totalPages: 1 };
 
   const columns = [
     {
@@ -17,73 +21,56 @@ export const Orders: React.FC = () => {
       accessor: (row: any) => (
         <div>
           <span className="font-medium text-white">{row.orderNumber}</span>
-          <p className="text-xs text-vaquita-text-tertiary mt-0.5">{row.createdAt}</p>
+          <p className="text-xs text-vaquita-text-tertiary mt-0.5">{new Date(row.createdAt).toLocaleDateString()}</p>
         </div>
       )
     },
     {
       header: 'Customer',
-      accessor: (row: any) => (
-        <div>
-          <span className="text-white">{row.customer.name}</span>
-          <p className="text-xs text-vaquita-text-tertiary mt-0.5">{row.customer.phone}</p>
-        </div>
-      )
+      accessor: (row: any) => {
+        const name = row.customer ? `${row.customer.firstName || ''} ${row.customer.lastName || ''}`.trim() : 'Guest';
+        return (
+          <div>
+            <span className="text-white">{name}</span>
+            <p className="text-xs text-vaquita-text-tertiary mt-0.5">{row.customer?.email || '-'}</p>
+          </div>
+        );
+      }
     },
     {
       header: 'Amount',
-      accessor: (row: any) => <span className="font-medium">₹{row.totalPrice}</span>
+      accessor: (row: any) => <span className="font-medium">₹{Number(row.totalPrice).toLocaleString()}</span>
     },
     {
       header: 'Payment',
       accessor: (row: any) => (
-        <Badge variant={row.paymentGateway === 'COD' ? 'warning' : 'success'}>
-          {row.paymentGateway}
+        <Badge variant={row.financialStatus === 'PENDING' ? 'warning' : 'success'}>
+          {row.financialStatus || 'UNKNOWN'}
         </Badge>
       )
     },
     {
       header: 'Fulfillment',
       accessor: (row: any) => (
-        <Badge variant={row.fulfillmentStatus === 'fulfilled' ? 'success' : 'default'}>
-          {row.fulfillmentStatus || 'unfulfilled'}
+        <Badge variant={row.fulfillmentStatus === 'FULFILLED' ? 'success' : 'default'}>
+          {row.fulfillmentStatus || 'UNFULFILLED'}
         </Badge>
       )
     },
     {
-      header: 'COD Status',
-      accessor: (row: any) => {
-        if (row.paymentGateway !== 'COD') return <span className="text-[#a3a3a3]">-</span>;
-        const variants: Record<string, string> = {
-          'confirmed': 'success',
-          'pending': 'warning',
-          'cancelled': 'error'
-        };
-        return <Badge variant={variants[row.codStatus] as any || 'default'}>{row.codStatus}</Badge>;
-      }
-    },
-    {
-      header: 'RTO Risk',
-      accessor: (row: any) => {
-        const risk = row.rtoRisk || 'Low';
-        const color = risk === 'High' ? 'text-red-400' : risk === 'Medium' ? 'text-yellow-400' : 'text-green-400';
-        return <span className={`text-sm font-medium ${color}`}>{risk}</span>;
-      }
+      header: 'Tags',
+      accessor: (row: any) => (
+        <div className="flex items-center gap-1">
+          {(row.tags || []).slice(0, 2).map((tag: string, i: number) => (
+            <span key={i} className="px-2 py-0.5 rounded text-[10px] bg-[#262626] text-[#a3a3a3] border border-[#404040]">
+              {tag}
+            </span>
+          ))}
+          {row.tags?.length > 2 && <span className="text-xs text-[#737373]">+{row.tags.length - 2}</span>}
+        </div>
+      )
     }
   ];
-
-  // Dummy data fallback
-  const fallbackData = Array(10).fill(null).map((_, i) => ({
-    id: `gid://shopify/Order/${1000 + i}`,
-    orderNumber: `#ORD-${2045 + i}`,
-    createdAt: 'Today, 10:45 AM',
-    totalPrice: (1299 + i * 150).toLocaleString(),
-    paymentGateway: i % 3 === 0 ? 'Prepaid' : 'COD',
-    fulfillmentStatus: i % 4 === 0 ? 'fulfilled' : 'unfulfilled',
-    codStatus: i % 3 !== 0 ? (i % 2 === 0 ? 'confirmed' : 'pending') : null,
-    rtoRisk: i % 5 === 0 ? 'High' : i % 2 === 0 ? 'Medium' : 'Low',
-    customer: { name: 'Rahul Sharma', phone: '+91 98765 43210' }
-  }));
 
   return (
     <motion.div 
@@ -128,34 +115,43 @@ export const Orders: React.FC = () => {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
-                <option value="all">All Payment Methods</option>
-                <option value="cod">COD Only</option>
-                <option value="prepaid">Prepaid Only</option>
+                <option value="all">All Status</option>
+                <option value="fulfilled">Fulfilled</option>
+                <option value="unfulfilled">Unfulfilled</option>
               </select>
             </div>
-            <select className="bg-[#0A0A0A] border border-[#262626] rounded-lg px-3 py-2 text-sm outline-none text-white cursor-pointer">
-              <option>All COD Status</option>
-              <option>Confirmed</option>
-              <option>Pending</option>
-            </select>
           </div>
         </div>
 
-        <DataTable 
-          columns={columns} 
-          data={orders || fallbackData} 
-          isLoading={isLoading}
-          onRowClick={(row) => navigate(`/orders/${row.id.split('/').pop()}`)}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          </div>
+        ) : (
+          <DataTable 
+            columns={columns} 
+            data={orders} 
+            isLoading={false}
+            onRowClick={(row) => navigate(`/orders/${row.id}`)}
+          />
+        )}
 
         <div className="p-4 border-t border-[#262626] flex items-center justify-between bg-[#171717]">
-          <span className="text-sm text-[#a3a3a3]">Showing 1-10 of 245 orders</span>
+          <span className="text-sm text-[#a3a3a3]">Showing {(meta.page - 1) * meta.limit + 1}-{Math.min(meta.page * meta.limit, meta.total)} of {meta.total} orders</span>
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-lg hover:bg-[#262626] text-[#a3a3a3] disabled:opacity-50 transition-colors">
+            <button 
+              disabled={meta.page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              className="p-2 rounded-lg hover:bg-[#262626] text-[#a3a3a3] disabled:opacity-50 transition-colors"
+            >
               <ChevronLeft className="w-4 h-4" />
             </button>
-            <span className="text-sm font-medium px-2">Page 1 of 25</span>
-            <button className="p-2 rounded-lg hover:bg-[#262626] text-[#a3a3a3] transition-colors">
+            <span className="text-sm font-medium px-2">Page {meta.page} of {meta.totalPages}</span>
+            <button 
+              disabled={meta.page >= meta.totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className="p-2 rounded-lg hover:bg-[#262626] text-[#a3a3a3] disabled:opacity-50 transition-colors"
+            >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>

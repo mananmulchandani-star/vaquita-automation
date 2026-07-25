@@ -1,56 +1,61 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Search, Filter, Download, MessageCircle } from 'lucide-react';
+import { Search, Filter, Download, MessageCircle, Loader2 } from 'lucide-react';
 import { DataTable, Badge } from '@/components/ui';
+import { useCustomers } from '@/hooks/useCustomers';
 
 export const Customers: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const { data: customers, isLoading } = useCustomers({ search: searchTerm });
 
   const columns = [
     {
       header: 'Customer',
-      accessor: (row: any) => (
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#1c1c1c] text-xs font-medium flex items-center justify-center border border-[#262626]">
-            {row.name.split(' ').map((n: string) => n[0]).join('')}
+      accessor: (row: any) => {
+        const name = `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown';
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-[#1c1c1c] text-xs font-medium flex items-center justify-center border border-[#262626]">
+              {name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase()}
+            </div>
+            <div>
+              <span className="font-medium text-white">{name}</span>
+              <p className="text-xs text-[#a3a3a3] mt-0.5">{row.city || 'Unknown'}</p>
+            </div>
           </div>
-          <div>
-            <span className="font-medium text-white">{row.name}</span>
-            <p className="text-xs text-[#a3a3a3] mt-0.5">{row.city || 'Unknown'}</p>
-          </div>
-        </div>
-      )
+        );
+      }
     },
     {
       header: 'Contact',
       accessor: (row: any) => (
         <div>
-          <span className="text-sm">{row.phone}</span>
-          <p className="text-xs text-[#a3a3a3] mt-0.5">{row.email}</p>
+          <span className="text-sm">{row.phone || '-'}</span>
+          <p className="text-xs text-[#a3a3a3] mt-0.5">{row.email || '-'}</p>
         </div>
       )
     },
     {
       header: 'Orders',
-      accessor: (row: any) => <span className="font-medium">{row.orderCount}</span>
+      accessor: (row: any) => <span className="font-medium">{row.ordersCount || 0}</span>
     },
     {
       header: 'Total Spend',
-      accessor: (row: any) => <span className="font-medium text-blue-400">₹{row.totalSpend.toLocaleString()}</span>
+      accessor: (row: any) => <span className="font-medium text-blue-400">₹{(row.totalSpent || 0).toLocaleString()}</span>
     },
     {
       header: 'WhatsApp Opt-In',
       accessor: (row: any) => (
-        <Badge variant={row.optIn ? 'success' : 'default'}>
-          {row.optIn ? 'Subscribed' : 'Pending'}
+        <Badge variant={row.optedIn ? 'success' : 'default'}>
+          {row.optedIn ? 'Subscribed' : 'Pending'}
         </Badge>
       )
     },
     {
-      header: 'Last Order',
-      accessor: (row: any) => <span className="text-sm text-[#a3a3a3]">{row.lastOrderDate}</span>
+      header: 'Joined',
+      accessor: (row: any) => <span className="text-sm text-[#a3a3a3]">{new Date(row.createdAt).toLocaleDateString()}</span>
     },
     {
       header: 'Action',
@@ -64,18 +69,6 @@ export const Customers: React.FC = () => {
       )
     }
   ];
-
-  const dummyData = Array(15).fill(null).map((_, i) => ({
-    id: `cust_${1000 + i}`,
-    name: ['Rahul Sharma', 'Priya Patel', 'Amit Kumar', 'Sneha Gupta', 'Vikram Singh'][i % 5],
-    phone: `+91 98765 ${40000 + i}`,
-    email: `customer${i}@example.com`,
-    city: ['Bangalore', 'Mumbai', 'Delhi', 'Pune', 'Hyderabad'][i % 5],
-    orderCount: (i % 5) + 1,
-    totalSpend: 1500 * ((i % 5) + 1),
-    optIn: i % 3 !== 0,
-    lastOrderDate: '2 days ago'
-  }));
 
   return (
     <motion.div 
@@ -119,12 +112,18 @@ export const Customers: React.FC = () => {
           </div>
         </div>
 
-        <DataTable 
-          columns={columns} 
-          data={dummyData} 
-          isLoading={false}
-          onRowClick={(row) => navigate(`/customers/${row.id}`)}
-        />
+        {isLoading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+          </div>
+        ) : (
+          <DataTable 
+            columns={columns} 
+            data={customers || []} 
+            isLoading={false}
+            onRowClick={(row) => navigate(`/customers/${row.id}`)}
+          />
+        )}
       </div>
     </motion.div>
   );

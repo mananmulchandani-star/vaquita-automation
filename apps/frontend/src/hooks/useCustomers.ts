@@ -4,14 +4,14 @@ import { customersApi } from '../api/customers.api';
 export function useCustomers(filters: any) {
   return useQuery({
     queryKey: ['customers', filters],
-    queryFn: () => customersApi.getCustomers(filters)
+    queryFn: () => customersApi.getCustomers(filters).then(res => res.data?.data || res.data)
   });
 }
 
 export function useCustomer(id: string) {
   return useQuery({
     queryKey: ['customer', id],
-    queryFn: () => customersApi.getCustomer(id),
+    queryFn: () => customersApi.getCustomerById(id).then(res => res.data?.data || res.data),
     enabled: !!id
   });
 }

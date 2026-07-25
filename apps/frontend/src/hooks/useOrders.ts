@@ -11,7 +11,7 @@ export function useOrders(filters: any) {
 export function useOrder(id: string) {
   return useQuery({
     queryKey: ['order', id],
-    queryFn: () => ordersApi.getOrder(id).then(res => res.data?.data || res.data),
+    queryFn: () => ordersApi.getOrderById(id).then(res => res.data?.data || res.data),
     enabled: !!id
   });
 }
