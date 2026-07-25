@@ -1,24 +1,26 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { requireStoreContext } from '../middleware/storeContext';
-import { authenticate, requireRole } from '../middleware/auth';
+import { authenticate } from '../middleware/auth';
 import { prisma } from '../config/database';
 import { encrypt } from '../lib/encryption';
-import { WhatsAppClient } from '../lib/whatsapp';
 import { logger } from '../config/logger';
 
 const router = Router();
 
 router.use(authenticate);
-router.use(requireStoreContext);
 
 /**
  * GET /api/v1/settings
- * Retrieves store configuration and integration status.
+ * Returns current store information for the authenticated user.
  */
-router.get('/', requireRole('ADMIN', 'MANAGER'), async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const storeId = req.user!.storeId;
+    if (!storeId) {
+      return res.status(400).json({ success: false, error: { message: 'No store associated with user' } });
+    }
+
     const store = await prisma.store.findUnique({
-      where: { id: req.user!.storeId },
+      where: { id: storeId },
       select: {
         id: true,
         shopifyDomain: true,
@@ -26,19 +28,27 @@ router.get('/', requireRole('ADMIN', 'MANAGER'), async (req: Request, res: Respo
         email: true,
         currency: true,
         timezone: true,
-        waAppId: true,
+        brandName: true,
+        isIntegrationComplete: true,
+        isActive: true,
+        // Return whether WhatsApp is configured (but not the actual secrets)
         waPhoneNumberId: true,
         waWabaId: true,
-        brandName: true,
-        supportNumber: true,
-        isIntegrationComplete: true,
-        createdAt: true,
+        installedAt: true,
       },
     });
 
+    if (!store) {
+      return res.status(404).json({ success: false, error: { message: 'Store not found' } });
+    }
+
     res.json({
       success: true,
-      data: store,
+      data: {
+        ...store,
+        shopifyConnected: !!store.shopifyDomain,
+        whatsappConnected: !!(store.waPhoneNumberId && store.waWabaId),
+      },
     });
   } catch (error) {
     next(error);
@@ -47,100 +57,72 @@ router.get('/', requireRole('ADMIN', 'MANAGER'), async (req: Request, res: Respo
 
 /**
  * POST /api/v1/settings/integrations
- * Updates Meta WhatsApp & Store Branding credentials (encrypts sensitive tokens).
+ * Saves WhatsApp credentials and brand settings.
+ * Called from the SetupWizard after Shopify OAuth is complete.
  */
-router.post('/integrations', requireRole('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
+router.post('/integrations', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const storeId = req.user!.storeId;
+    if (!storeId) {
+      return res.status(400).json({ success: false, error: { message: 'No store associated with user' } });
+    }
+
     const {
+      // WhatsApp fields
       metaAppId,
       metaAppSecret,
       metaAccessToken,
       metaPhoneId,
       metaWabaId,
       metaVerifyToken,
+      metaWebhookVerifyToken,
+      // Brand fields
       brandName,
       brandColor,
     } = req.body;
 
-    const updateData: Record<string, any> = {};
+    const updateData: any = {
+      isIntegrationComplete: true,
+    };
 
-    if (metaAppId) updateData.waAppId = metaAppId;
+    // WhatsApp fields (encrypt secrets)
+    if (metaAppId !== undefined) updateData.waAppId = metaAppId;
     if (metaAppSecret) updateData.waAppSecret = encrypt(metaAppSecret);
     if (metaAccessToken) updateData.waAccessToken = encrypt(metaAccessToken);
-    if (metaPhoneId) updateData.waPhoneNumberId = metaPhoneId;
-    if (metaWabaId) updateData.waWabaId = metaWabaId;
+    if (metaPhoneId !== undefined) updateData.waPhoneNumberId = metaPhoneId;
+    if (metaWabaId !== undefined) updateData.waWabaId = metaWabaId;
     if (metaVerifyToken) updateData.waVerifyToken = encrypt(metaVerifyToken);
-    if (brandName) updateData.brandName = brandName;
+    if (metaWebhookVerifyToken) updateData.waWebhookSecret = encrypt(metaWebhookVerifyToken);
 
-    updateData.isIntegrationComplete = true;
+    // Brand fields
+    if (brandName !== undefined) updateData.brandName = brandName;
 
-    const updatedStore = await prisma.store.update({
+    const store = await prisma.store.update({
       where: { id: storeId },
       data: updateData,
       select: {
         id: true,
         shopifyDomain: true,
-        waAppId: true,
+        name: true,
+        isIntegrationComplete: true,
+        brandName: true,
         waPhoneNumberId: true,
         waWabaId: true,
-        brandName: true,
-        isIntegrationComplete: true,
       },
     });
 
-    logger.info({ storeId }, 'Integration settings updated and encrypted successfully');
+    logger.info({ storeId }, 'Store integration settings updated');
 
     res.json({
       success: true,
-      data: updatedStore,
-      message: 'Integration settings saved successfully',
+      data: {
+        ...store,
+        shopifyConnected: !!store.shopifyDomain,
+        whatsappConnected: !!(store.waPhoneNumberId && store.waWabaId),
+      },
     });
   } catch (error) {
     next(error);
-  }
-});
-
-/**
- * POST /api/v1/settings/test-whatsapp
- * Validates saved WhatsApp credentials against Meta Cloud API.
- */
-router.post('/test-whatsapp', requireRole('ADMIN'), async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const storeId = req.user!.storeId;
-    const { testPhone } = req.body;
-
-    const store = await prisma.store.findUnique({ where: { id: storeId } });
-    if (!store || !store.waAccessToken || !store.waPhoneNumberId) {
-      res.status(400).json({
-        success: false,
-        error: { message: 'WhatsApp credentials are not configured for this store' },
-      });
-      return;
-    }
-
-    // Try creating client & fetching business profile as a test
-    const { getWhatsAppClient } = await import('../lib/whatsapp.js');
-    const waClient = await getWhatsAppClient(storeId as string);
-    
-    let result: any = null;
-    if (testPhone) {
-      result = await waClient.sendText(testPhone, 'Hello! This is a test message from your VAQUITA Automation store setup.');
-    } else {
-      result = await waClient.getBusinessProfile();
-    }
-
-    res.json({
-      success: true,
-      data: result,
-      message: 'WhatsApp connection test successful!',
-    });
-  } catch (error: any) {
-    logger.error({ err: error.message }, 'WhatsApp connection test failed');
-    res.status(400).json({
-      success: false,
-      error: { message: error.message || 'WhatsApp connection test failed. Please check your credentials.' },
-    });
   }
 });
 

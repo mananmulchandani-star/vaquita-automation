@@ -95,26 +95,18 @@ export const Settings: React.FC = () => {
               <div className="space-y-6">
                 <div>
                   <h3 className="text-lg font-semibold mb-4 text-[#d4d4d4]">Shopify</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-[#d4d4d4]">Store Domain</label>
-                      <input type="text" className="w-full bg-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-[#d4d4d4]">API Key</label>
-                      <input type="text" className="w-full bg-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1 text-[#d4d4d4]">API Secret</label>
-                      <input type="password" className="w-full bg-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-[#d4d4d4]">Access Token</label>
-                      <input type="password" className="w-full bg-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium mb-1 text-[#d4d4d4]">Webhook Secret</label>
-                      <input type="password" className="w-full bg-[#0A0A0A] border border-[#333] rounded-xl px-4 py-3 text-sm text-white focus:border-blue-500 outline-none" />
+                  <div className="p-4 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-emerald-500/20 rounded-lg flex items-center justify-center">
+                          <Store className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-emerald-400">Connected via OAuth</p>
+                          <p className="text-sm text-[#a3a3a3]">Credentials are automatically managed</p>
+                        </div>
+                      </div>
+                      <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-medium">Active</span>
                     </div>
                   </div>
                 </div>

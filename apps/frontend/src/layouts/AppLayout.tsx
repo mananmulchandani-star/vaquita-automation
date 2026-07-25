@@ -35,8 +35,13 @@ export function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const location = useLocation();
 
-  // Mock API / state for integration check
+  // Check auth and integration status
+  const hasToken = !!localStorage.getItem('auth_token');
   const isIntegrationComplete = localStorage.getItem('integrationComplete') === 'true';
+
+  if (!hasToken) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (!isIntegrationComplete) {
     return <Navigate to="/setup" replace />;
