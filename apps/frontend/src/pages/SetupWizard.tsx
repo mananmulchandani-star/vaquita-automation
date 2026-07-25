@@ -95,7 +95,8 @@ export const SetupWizard: React.FC = () => {
     const shop = prompt('Enter your Shopify store domain (e.g. my-store.myshopify.com):');
     if (shop) {
       const cleanShop = shop.replace(/^https?:\/\//, '').replace(/\/$/, '');
-      window.location.href = `/api/v1/shopify/auth?shop=${encodeURIComponent(cleanShop)}`;
+      const apiUrl = import.meta.env.VITE_API_URL || '/api/v1';
+      window.location.href = `${apiUrl}/shopify/auth?shop=${encodeURIComponent(cleanShop)}`;
     }
   };
 
