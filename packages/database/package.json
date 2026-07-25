@@ -9,7 +9,7 @@
     "migrate": "prisma migrate dev",
     "seed": "ts-node prisma/seed.ts",
     "studio": "prisma studio",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "npm run generate && tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@prisma/client": "^5.14.0"
